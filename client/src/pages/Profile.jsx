@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   getDownloadURL,
   getStorage,
@@ -7,6 +7,11 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
+import {
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess,
+} from "../redux/user/userSlice";
 
 const Profile = () => {
   const [formData, setFormData] = useState({});
@@ -17,6 +22,7 @@ const Profile = () => {
 
   const { currentUser, loading, error } = useSelector((state) => state.user);
   const fileRef = useRef(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (image) {
@@ -47,11 +53,34 @@ const Profile = () => {
     );
   };
 
-  const handleSignOut = (e) => {
-    e.preventDefault();
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
   };
-  const handleSubmit = (e) => {
+
+  const handleSignOut = () => {};
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(updateUserFailure(data));
+        return;
+      }
+      dispatch(updateUserSuccess(data));
+      setUpdateSuccess(true);
+    } catch (error) {
+      dispatch(updateUserFailure(error));
+    }
   };
 
   return (
@@ -98,7 +127,7 @@ const Profile = () => {
           id="username"
           placeholder="Username"
           className="bg-slate-100 rounded-lg p-3"
-          // onChange={handleChange}
+          onChange={handleChange}
         />
 
         <input
@@ -107,7 +136,7 @@ const Profile = () => {
           id="email"
           placeholder="Email"
           className="bg-slate-100 rounded-lg p-3"
-          // onChange={handleChange}
+          onChange={handleChange}
         />
 
         <input
@@ -115,11 +144,11 @@ const Profile = () => {
           id="password"
           placeholder="Password"
           className="bg-slate-100 rounded-lg p-3"
-          // onChange={handleChange}
+          onChange={handleChange}
         />
 
         <button className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80">
-          {/* {loading ? "Loading..." : "Update"} */}
+          {loading ? "Loading..." : "Update"}
         </button>
       </form>
 
@@ -135,10 +164,10 @@ const Profile = () => {
         </span>
       </div>
 
-      {/* <p className="text-red-700 mt-5">{error && "Something went wrong!"}</p> */}
-      {/* <p className="text-green-700 mt-5">
+      <p className="text-red-700 mt-5">{error && "Something went wrong!"}</p>
+      <p className="text-green-700 mt-5">
         {updateSuccess && "User is updated successfully!"}
-      </p> */}
+      </p>
     </div>
   );
 };
