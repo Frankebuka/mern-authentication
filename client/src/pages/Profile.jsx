@@ -11,6 +11,7 @@ import {
   deleteUserFailure,
   deleteUserStart,
   deleteUserSuccess,
+  signOut,
   updateUserFailure,
   updateUserStart,
   updateUserSuccess,
@@ -60,7 +61,14 @@ const Profile = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleSignOut = () => {};
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/signout");
+      dispatch(signOut());
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
